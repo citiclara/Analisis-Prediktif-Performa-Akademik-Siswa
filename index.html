@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analisis Prediktif Performa Akademik Siswa</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #c0c0c0 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .header p {
+        font-size: 1.2em;
+        opacity: 0.9;
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        padding: 30px;
+      }
+
+      .input-section {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .results-section {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #4facfe;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        width: 100%;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .prediction-result {
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .prediction-pass {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        color: white;
+      }
+
+      .prediction-fail {
+        background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        color: white;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .chart-container {
+        margin-top: 20px;
+        height: 300px;
+      }
+
+      .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      .history-table th,
+      .history-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .history-table th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .history-table tr:hover {
+        background-color: #f5f5f5;
+      }
+
+      .section-title {
+        font-size: 1.5em;
+        margin-bottom: 20px;
+        color: #333;
+        border-bottom: 3px solid #4facfe;
+        padding-bottom: 10px;
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          grid-template-columns: 1fr;
+          gap: 20px;
+          padding: 20px;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎓 Analisis Prediktif Performa Akademik</h1>
+        <p>Sistem Prediksi Kelulusan Siswa Berbasis Machine Learning</p>
+      </div>
+
+      <div class="main-content">
+        <div class="input-section">
+          <h2 class="section-title">📝 Input Data Siswa</h2>
+          <form id="studentForm">
+            <div class="form-group">
+              <label for="studentId">Student ID:</label>
+              <input type="text" id="studentId" name="studentId" required />
+            </div>
+
+            <div class="form-group">
+              <label for="gender">Gender:</label>
+              <select id="gender" name="gender" required>
+                <option value="">Pilih Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="studyHours">Study Hours per Week:</label>
+              <input type="number" id="studyHours" name="studyHours" min="0" max="168" required />
+            </div>
+
+            <div class="form-group">
+              <label for="attendance">Attendance Rate(%):</label>
+              <input type="number" id="attendance" name="attendance" min="0" max="100" required />
+            </div>
+
+            <div class="form-group">
+              <label for="pastScores">Past Exam Scores:</label>
+              <input type="number" id="pastScores" name="pastScores" min="0" max="100" required />
+            </div>
+
+            <div class="form-group">
+              <label for="parentEducation">Parental Education Level:</label>
+              <select id="parentEducation" name="parentEducation" required>
+                <option value="">Pilih Tingkat Pendidikan</option>
+                <option value="SD">High School</option>
+                <option value="S1">Bachelors</option>
+                <option value="S2">Masters</option>
+                <option value="S3">PhD</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="internetAccess">Internet Access at Home:</label>
+              <select id="internetAccess" name="internetAccess" required>
+                <option value=""></option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="extracurricular">Extracurricular Activities:</label>
+              <select id="extracurricular" name="extracurricular" required>
+                <option value=""></option>
+                <option value="Yes">Ya</option>
+                <option value="No">Tidak</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="finalScore">Final Exam Score:</label>
+              <input type="number" id="finalScore" name="finalScore" min="0" max="100" required />
+            </div>
+
+            <button type="submit" class="btn">Graduation Prediction</button>
+          </form>
+        </div>
+
+        <div class="results-section">
+          <h2 class="section-title">Prediction Result</h2>
+          <div id="predictionResult"></div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="totalPredictions">0</div>
+              <div class="stat-label">Total Prediction</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="passRate">0%</div>
+              <div class="stat-label">Tingkat Kelulusan</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="averageScore">0</div>
+              <div class="stat-label">Rata-rata Nilai</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="highPerformers">0</div>
+              <div class="stat-label">Performa Tinggi</div>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="performanceChart"></canvas>
+          </div>
+
+          <h3 style="margin-top: 30px; color: #333">📈 Riwayat Prediksi</h3>
+          <div style="max-height: 300px; overflow-y: auto">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nilai Akhir</th>
+                  <th>Prediksi</th>
+                  <th>Kelas</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class StudentPerformancePredictor {
+        constructor() {
+          this.predictions = [];
+          this.chart = null;
+          this.initializeChart();
+          this.bindEvents();
+        }
+
+        bindEvents() {
+          document.getElementById('studentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.makePrediction();
+          });
+        }
+
+        initializeChart() {
+          const ctx = document.getElementById('performanceChart').getContext('2d');
+          this.chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Lulus', 'Tidak Lulus'],
+              datasets: [
+                {
+                  data: [0, 0],
+                  backgroundColor: ['rgba(75, 192, 192, 0.8)', 'rgba(255, 99, 132, 0.8)'],
+                  borderWidth: 2,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                },
+                title: {
+                  display: true,
+                  text: 'Distribusi Kelulusan',
+                },
+              },
+            },
+          });
+        }
+
+        makePrediction() {
+          const formData = new FormData(document.getElementById('studentForm'));
+          const studentData = Object.fromEntries(formData.entries());
+
+          // Konversi data numerik
+          const studyHours = parseFloat(studentData.studyHours);
+          const attendance = parseFloat(studentData.attendance);
+          const pastScores = parseFloat(studentData.pastScores);
+          const finalScore = parseFloat(studentData.finalScore);
+
+          // Algoritma prediksi sederhana berbasis bobot
+          const prediction = this.calculatePrediction({
+            studyHours,
+            attendance,
+            pastScores,
+            finalScore,
+            gender: studentData.gender,
+            parentEducation: studentData.parentEducation,
+            internetAccess: studentData.internetAccess,
+            extracurricular: studentData.extracurricular,
+          });
+
+          // Tentukan kelas berdasarkan nilai akhir
+          let scoreClass = 'Rendah';
+          if (finalScore >= 85) scoreClass = 'Tinggi';
+          else if (finalScore >= 70) scoreClass = 'Sedang';
+
+          const result = {
+            studentId: studentData.studentId,
+            finalScore: finalScore,
+            prediction: prediction,
+            scoreClass: scoreClass,
+            confidence: this.calculateConfidence(prediction, finalScore),
+            timestamp: new Date().toLocaleString(),
+          };
+
+          this.predictions.push(result);
+          this.displayPrediction(result);
+          this.updateStatistics();
+          this.updateChart();
+          this.updateHistoryTable();
+        }
+
+        calculatePrediction(data) {
+          let score = 0;
+          let totalWeight = 0;
+
+          // Bobot untuk setiap faktor
+          const weights = {
+            finalScore: 0.3,
+            pastScores: 0.25,
+            attendance: 0.2,
+            studyHours: 0.15,
+            parentEducation: 0.05,
+            internetAccess: 0.025,
+            extracurricular: 0.025,
+          };
+
+          // Hitung skor berdasarkan nilai akhir
+          score += (data.finalScore / 100) * weights.finalScore;
+          totalWeight += weights.finalScore;
+
+          // Hitung skor berdasarkan nilai ujian sebelumnya
+          score += (data.pastScores / 100) * weights.pastScores;
+          totalWeight += weights.pastScores;
+
+          // Hitung skor berdasarkan kehadiran
+          score += (data.attendance / 100) * weights.attendance;
+          totalWeight += weights.attendance;
+
+          // Hitung skor berdasarkan jam belajar (normalisasi dengan max 50 jam)
+          const normalizedStudyHours = Math.min(data.studyHours / 50, 1);
+          score += normalizedStudyHours * weights.studyHours;
+          totalWeight += weights.studyHours;
+
+          // Faktor pendidikan orang tua
+          const educationScore = this.getEducationScore(data.parentEducation);
+          score += educationScore * weights.parentEducation;
+          totalWeight += weights.parentEducation;
+
+          // Faktor akses internet
+          const internetScore = data.internetAccess === 'Yes' ? 1 : 0.5;
+          score += internetScore * weights.internetAccess;
+          totalWeight += weights.internetAccess;
+
+          // Faktor ekstrakurikuler
+          const extraScore = data.extracurricular === 'Yes' ? 1 : 0.7;
+          score += extraScore * weights.extracurricular;
+          totalWeight += weights.extracurricular;
+
+          // Normalisasi skor
+          const finalPredictionScore = (score / totalWeight) * 100;
+
+          // Tentukan prediksi berdasarkan ambang batas
+          return finalPredictionScore >= 65 ? 'Pass' : 'Fail';
+        }
+
+        getEducationScore(education) {
+          const educationScores = {
+            SD: 0.3,
+            SMP: 0.4,
+            SMA: 0.6,
+            D3: 0.7,
+            S1: 0.8,
+            S2: 0.9,
+            S3: 1.0,
+          };
+          return educationScores[education] || 0.5;
+        }
+
+        calculateConfidence(prediction, finalScore) {
+          // Tingkat kepercayaan berdasarkan nilai akhir
+          if (finalScore >= 85) return 95;
+          if (finalScore >= 75) return 85;
+          if (finalScore >= 65) return 75;
+          if (finalScore >= 55) return 65;
+          return 50;
+        }
+
+        displayPrediction(result) {
+          const resultDiv = document.getElementById('predictionResult');
+          const isPass = result.prediction === 'Pass';
+
+          resultDiv.innerHTML = `
+                    <div class="prediction-result ${isPass ? 'prediction-pass' : 'prediction-fail'}">
+                        <div style="font-size: 24px; margin-bottom: 10px;">
+                            ${isPass ? '✅ LULUS' : '❌ TIDAK LULUS'}
+                        </div>
+                        <div style="font-size: 16px; opacity: 0.9;">
+                            Siswa: ${result.studentId} | Nilai: ${result.finalScore} | Kelas: ${result.scoreClass}
+                        </div>
+                        <div style="font-size: 14px; margin-top: 10px;">
+                            Tingkat Kepercayaan: ${result.confidence}%
+                        </div>
+                    </div>
+                `;
+        }
+
+        updateStatistics() {
+          const total = this.predictions.length;
+          const passCount = this.predictions.filter((p) => p.prediction === 'Pass').length;
+          const passRate = total > 0 ? ((passCount / total) * 100).toFixed(1) : 0;
+          const avgScore = total > 0 ? (this.predictions.reduce((sum, p) => sum + p.finalScore, 0) / total).toFixed(1) : 0;
+          const highPerformers = this.predictions.filter((p) => p.scoreClass === 'Tinggi').length;
+
+          document.getElementById('totalPredictions').textContent = total;
+          document.getElementById('passRate').textContent = passRate + '%';
+          document.getElementById('averageScore').textContent = avgScore;
+          document.getElementById('highPerformers').textContent = highPerformers;
+        }
+
+        updateChart() {
+          const passCount = this.predictions.filter((p) => p.prediction === 'Pass').length;
+          const failCount = this.predictions.filter((p) => p.prediction === 'Fail').length;
+
+          this.chart.data.datasets[0].data = [passCount, failCount];
+          this.chart.update();
+        }
+
+        updateHistoryTable() {
+          const tbody = document.getElementById('historyTableBody');
+          tbody.innerHTML = '';
+
+          this.predictions
+            .slice(-10)
+            .reverse()
+            .forEach((prediction) => {
+              const row = tbody.insertRow();
+              row.innerHTML = `
+                        <td>${prediction.studentId}</td>
+                        <td>${prediction.finalScore}</td>
+                        <td style="color: ${prediction.prediction === 'Pass' ? '#4CAF50' : '#f44336'}">
+                            ${prediction.prediction === 'Pass' ? '✅ Lulus' : '❌ Tidak Lulus'}
+                        </td>
+                        <td>${prediction.scoreClass}</td>
+                    `;
+            });
+        }
+      }
+
+      // Inisialisasi aplikasi
+      document.addEventListener('DOMContentLoaded', () => {
+        new StudentPerformancePredictor();
+      });
+    </script>
+  </body>
+</html>
